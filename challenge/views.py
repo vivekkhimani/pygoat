@@ -5,6 +5,8 @@ from django.views.decorators.csrf import csrf_exempt
 import subprocess
 from .utility import get_free_port
 from .models import Challenge, UserChallenge
+from security import safe_command
+
 # Create your views here.
 
 
@@ -47,7 +49,7 @@ class DoItFast(View):
             return JsonResponse({'message': 'failed', 'status': '500', 'endpoint': 'None'})
         
         command = f"docker run -d -p {port}:{chal.docker_port} {chal.docker_image}"
-        process = subprocess.Popen(command.split(" "), stdout=subprocess.PIPE)
+        process = safe_command.run(subprocess.Popen, command.split(" "), stdout=subprocess.PIPE)
         output, error = process.communicate()
         container_id = output.decode('utf-8').strip()
         
@@ -78,7 +80,7 @@ class DoItFast(View):
         user_chal.is_live = False
         user_chal.save()
         command = f"docker stop {user_chal.container_id}"
-        process = subprocess.Popen(command.split(" "), stdout=subprocess.PIPE)
+        process = safe_command.run(subprocess.Popen, command.split(" "), stdout=subprocess.PIPE)
         output, error = process.communicate()
         return JsonResponse({'message': 'success', 'status': '200'})
     
